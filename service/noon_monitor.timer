@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Folder Monitor daily at 12:00 PM
+
+[Timer]
+# 毎日 12:00:00 に実行
+OnCalendar=*-*-* 12:00:00
+# もし12時にPCの電源がOFFだったら、PC起動後にすぐ実行する
+Persistent=true
+
+[Install]
+WantedBy=timers.target

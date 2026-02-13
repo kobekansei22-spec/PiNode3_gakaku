@@ -1,0 +1,9 @@
+[Unit]
+Description=Folder Monitor (Started by timer at noon)
+
+[Service]
+Type=simple
+ExecStart=/home/pinode3/PiNode3/venv/bin/python /home/pinode3/PiNode3/src/watch.py
+WorkingDirectory=/home/pinode3/PiNode3/src
+User=pinode3
+Restart=on-failure
