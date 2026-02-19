@@ -3,11 +3,9 @@ import json
 
 class Notifier:
     def __init__(self):
-        # 【重要】URLは再発行したものに書き換えてください
+        # TeamsのAPIキー
         self.teams_url = "https://defaulte0d7dc0046214fe090b1df7b1b40b3.51.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/828ae53b9cf84cc4859f2efc26a20919/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=O-HmMsWUOmcCXf7JfXlVl-2tj65ojm9BJ20OL7tE21o"
-        
-        self.line_token = "ここにLINEトークン"
-        self.line_user_id = "ここにLINEユーザーID"
+
 
     def send_teams(self, text, title="メロン監視システム", mention_email="danish.adira.hidayat.22@shizuoka.ac.jp"):
         """
@@ -75,7 +73,6 @@ class Notifier:
         }
         
         try:
-            # URLは必ず「再発行した正しいもの」を使ってください
             response = requests.post(self.teams_url, headers=headers, json=payload)
             if response.status_code == 202:
                 print(f"Teams送信成功: {text}")
