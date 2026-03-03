@@ -10,7 +10,13 @@ import numpy as np
 from pathlib import Path
 from usb import USB
 import util
-import os  # ★ ロックファイルのために os をインポート
+import os  
+
+"""
+変更点
+・ロックファイルの追加
+・SPRESENSEにて低解像度画像取得のためのコード
+"""
 
 # ★ カメラリソースのロックファイルパス
 CAMERA_LOCK_FILE = "/tmp/camera.lock"

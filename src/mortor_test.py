@@ -6,8 +6,6 @@ import termios
 from camera_fast import Camera
 
 
-# (注: usb.py が同じディレクトリにあるか、
-#  Pythonが 'usb' モジュールを見つけられる必要があります)
 try:
     from usb import USB
 except ImportError:
@@ -31,9 +29,7 @@ class mortor:
         devices = USB().get()
         
         for port, type, name in devices:
-            # (注: 以前のやり取りに基づき 'MOTOR DRIVER' に修正)
             if type == 'mortor driver': 
-                # (注: 以前のやり取りに基づき name を使うように修正)
                 # self.port = f'/dev/ttyUSB_{port}'
                 self.port = name 
                 break

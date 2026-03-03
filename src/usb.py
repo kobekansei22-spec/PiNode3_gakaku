@@ -20,11 +20,23 @@ class USB:
         """
         self.ports = self._get_connect_ports()
         self.identifys = [self._identify_usb_device(port) for port in self.ports]
-        self.names = [
-            self._get_spresense_name(port) if identify == 'SPRESENSE' else self._get_usb_camera_name(port)
-            for port, identify in zip(self.ports, self.identifys)
-        ]
-        return list(sorted(zip(self.ports, self.identifys, self.names), key=lambda x: x[0]))
+        
+        devices_found = []
+        for port, identify in zip(self.ports, self.identifys):
+            name = None # 初期化
+            
+            if identify == 'SPRESENSE':
+                name = self._get_spresense_name(port)
+            elif identify == 'USB Camera':
+                name = self._get_usb_camera_name(port)
+            elif identify == 'mortor driver': # ★ モータドライバのケースを追加
+                name = self._get_mortor_driver_name(port)
+            # 'UNKNOWN' などのデバイスは name が None のままなので無視される
+            
+            if name is not None:
+                devices_found.append((port, identify, name))
+
+        return list(sorted(devices_found, key=lambda x: x[0]))
 
     
     def _get_connect_ports(self):
@@ -54,6 +66,7 @@ class USB:
 
     def _identify_usb_device(self, port):
         """
+        ※カメラ以外にモータドライバも読み取るように変更※
         接続されているUSB機器のデバイス名を取得
         
         Args: 
@@ -66,13 +79,35 @@ class USB:
         Notes:
             '/dev/ttyUSB_' + USBポート番号 で指定されたパスにシンボリックリンクが存在する
             
-            シンボリックリンクの参照物のパス内にttyUSBが含まれていればSPRESENSE,入っていなければUSB Cameraの文字列を返す
+            シンボリックリンクの参照物のパス内の文字列から返す文字列を判別する
         """
         device = '/dev/ttyUSB_' + str(port)
-        if 'ttyUSB' in os.readlink(device):
+
+        try:
+            device_link = os.readlink(device)
+        except FileNotFoundError:
+            return 'UNKNOWN'
+        
+        if 'ttyUSB' in device_link:
             return 'SPRESENSE'
-        else:
+        elif 'video' in device_link:
             return 'USB Camera'
+        elif 'ttyACM' in device_link:
+            return 'mortor driver'
+        else:
+            return 'UNKNOWN'
+
+    def _get_mortor_driver_name(self, port):
+        """
+        ※モータ制御のため追加※
+        Args:
+            port (int): USB接続している機器のポート番号
+
+        Returns:
+            モータドライバのデバイスファイルへのパス(str)
+        """
+    
+        return '/dev/ttyUSB_' + str(port)
 
     def _get_spresense_name(self, port):
         """
@@ -137,4 +172,4 @@ class USB:
                 retVal = int(os.readlink('/dev/v4l/by-path/' + device)[-1])
                 if retVal % 2 == 0:
                     return retVal
-        raise ValueError("unknown port")
+        return None
