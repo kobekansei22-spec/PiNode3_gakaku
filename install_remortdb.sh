@@ -70,4 +70,5 @@ sudo systemctl enable data_collector.timer
 sudo systemctl start data_collector.timer
 sudo systemctl enable daily_rsync.timer
 sudo systemctl start daily_rsync.timer
-
+sudo systemctl enable noon_monitor.timer
+sudo systemctl start noon_monitor.timer

@@ -5,7 +5,6 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 # ★ 物体検出スクリプトがあるフォルダのパスを追加
-# (data_collector.py が /home/pinode3/PiNode3/src にある場合)
 sys.path.append('/home/pinode3/PiNode3/src')
 
 # ★ 物体検出スクリプトをインポート
@@ -18,7 +17,7 @@ except ImportError as e:
 
 # 監視するベースフォルダ
 BASE_PATH = "/home/pinode3/data/image"
-FOLDERS_TO_WATCH = ["image2"]
+FOLDERS_TO_WATCH = ["image1","image2"]
 
 # ★ 停止するまでの回数を設定
 STOP_AFTER_COUNT = 3
@@ -65,14 +64,15 @@ class FileCreatedHandler(FileSystemEventHandler):
 if __name__ == "__main__":
     # ★ オブザーバーを先に作成
     observer = Observer()
-    # ★ ハンドラにオブザーバーを渡してインスタンス化
-    event_handler = FileCreatedHandler(observer_to_stop=observer)
     
     for folder in FOLDERS_TO_WATCH:
         path_to_watch = os.path.join(BASE_PATH, folder)
         if not os.path.isdir(path_to_watch):
             print(f"警告: 監視対象フォルダが存在しません: {path_to_watch}")
             continue
+        
+        # ★ ハンドラにオブザーバーを渡してインスタンス化
+        event_handler = FileCreatedHandler(observer_to_stop=observer)
         
         observer.schedule(event_handler, path_to_watch, recursive=False)
         print(f"{path_to_watch} の監視を開始します...")

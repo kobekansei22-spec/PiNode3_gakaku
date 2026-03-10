@@ -86,4 +86,6 @@ echo === サービスファイルの登録 ===
 sudo systemctl daemon-reload
 sudo systemctl enable data_collector.timer
 sudo systemctl start data_collector.timer
+sudo systemctl enable noon_monitor.timer
+sudo systemctl start noon_monitor.timer
 
