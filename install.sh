@@ -51,6 +51,8 @@ echo "InfluxDBのインストールとセットアップが完了しました。
 ### pythonライブラリのインストール
 sudo apt update
 sudo apt install -y python3-opencv
+sudo apt install swig
+sudo apt install liblgpio-dev
 echo "=== pythonライブラリのインストール ==="
 python -m venv venv
 source venv/bin/activate

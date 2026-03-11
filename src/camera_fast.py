@@ -309,16 +309,14 @@ class UsbCamera:
 
 
 if __name__ == '__main__':
-    while True:
-        devices = USB().get()
-        print(devices)
-        for i, (port, type, name) in enumerate(devices):
-            print(port, type, name)
-            tm = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-            # ★ if __name__ == '__main__' のテスト実行時はロックをかけない
-            if type == 'SPRESENSE':
-                SPRESENSE(name).save(f"test_{port}_{tm}.jpg")
-            elif type == 'USB Camera':
-                UsbCamera(name).save(f"test_{port}_{tm}.jpg")
-        time.sleep(60*10)
+    devices = USB().get()
+    print(devices)
+    for i, (port, type, name) in enumerate(devices):
+        print(port, type, name)
+        tm = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+        # ★ if __name__ == '__main__' のテスト実行時はロックをかけない
+        if type == 'SPRESENSE':
+            SPRESENSE(name).save(f"test_{port}_{tm}.jpg")
+        elif type == 'USB Camera':
+            UsbCamera(name).save(f"test_{port}_{tm}.jpg")
 
