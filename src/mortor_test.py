@@ -20,30 +20,35 @@ class mortor:
     """
     サーボモーターを制御するクラス
     """
-    def __init__(self, baudrate=1000000):
+    def __init__(self, port_name=None, baudrate=1000000):
         """
-        初期化時に 'MOTOR DRIVER' を探し、シリアルポートを開く
+        初期化時にポート名が指定されていればそれを開き、
+        指定されていなければ自動で 'mortor driver' を探す
         """
-        self.port = None
+        self.port = port_name
         self.ser = None
-        devices = USB().get()
         
-        for port, type, name in devices:
-            if type == 'mortor driver': 
-                # self.port = f'/dev/ttyUSB_{port}'
-                self.port = name 
-                break
+        # ▼ 引数でポートが指定されなかった場合のみ、従来通り自動検索する
+        if self.port is None:
+            devices = USB().get()
+            for port, type, name in devices:
+                if type == 'mortor driver': 
+                    self.port = name 
+                    break
 
         if self.port is None:
             raise RuntimeError("MOTOR DRIVER が見つかりません。USB接続を確認してください。")
 
         try:
-            # シリアルポートを一度だけ開く
+            # シリアルポートを開く
             self.ser = serial.Serial(self.port, baudrate, timeout=0.1)
             print(f"モータードライバに接続しました: {self.port}")
         except serial.SerialException as e:
             print(f"エラー: {self.port} を開けません: {e}")
             sys.exit(1)
+
+    def send_port(self):
+        return self.port
 
     def close(self):
         """
@@ -187,9 +192,11 @@ def getch():
 
 # --- メインの実行部分 ---
 if __name__ == '__main__':
+
+    port = sys.argv[1] if len(sys.argv) > 1 else None
     
     try:
-        move = mortor()
+        move = mortor(port)
     except Exception as e:
         print(f"初期化エラー: {e}")
         sys.exit(1)
@@ -269,7 +276,20 @@ if __name__ == '__main__':
 
             elif key == 'c':
                 print("画像")
-                Camera().save_images()
+                port = move.send_port()
+                print(port)
+                if port == '/dev/ttyUSB_1':
+                    cam_port = 2
+                elif port == '/dev/ttyUSB_2':
+                    cam_port = 1
+                elif port == '/dev/ttyUSB_3':
+                    cam_port = 4
+                elif port == '/dev/ttyUSB_4':
+                    cam_port = 3
+                else :
+                    cam_port = None
+
+                Camera().save_images(cam_port)
             
             # (オプション) 現在位置の読み取り
             # elif key == 'p':

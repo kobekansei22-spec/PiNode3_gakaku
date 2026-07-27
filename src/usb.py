@@ -173,3 +173,7 @@ class USB:
                 if retVal % 2 == 0:
                     return retVal
         return None
+
+if __name__ == "__main__":
+    devices = USB().get()
+    print(devices)

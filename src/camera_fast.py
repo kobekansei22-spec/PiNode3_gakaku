@@ -28,7 +28,7 @@ class Camera:
     def __init__(self):
         self.config = util.get_pinode_config()
 
-    def save_images(self):
+    def save_images(self, target_port = None):
         """
         デバイスに応じたカメラ撮影を行うメソッド.
         ★ ロックファイルを使用してリソースの衝突を回避する
@@ -49,19 +49,17 @@ class Camera:
             success_flag = False
             for port, type, name in devices:
                 
-                if port != 1:
+                if target_port is not None and port != target_port:
                     continue # ポートが 1 でなければ、このデバイスを無視して次のループへ
 
                 # ★ ポートが 1 のデバイスのみ、以下の処理が実行される
                 print(f"ポート {port} ({type}) を処理します。") # デバッグ用
+                file_name ='thumbnail.jpg'
                 if type == 'SPRESENSE':
                     # サムネイル用のファイル名
-                    file_name ='thumbnail.jpg'
                     if SPRESENSE(name).save(file_name):
                         success_flag = True
                 elif type == 'USB Camera':
-                    # USBカメラは通常通りのファイル名
-                    file_name = "image{:1}/{}_{:02}_RGB_{}.jpg".format(port, self.config['device_id'], port, dt.datetime.now().strftime('%Y%m%d-%H%M'))
                     if UsbCamera(name).save(file_name):
                         success_flag = True
             
@@ -297,7 +295,12 @@ class UsbCamera:
             cap.release()
             return False
 
-        local_file_path = str(Path(self.config['camera']['image_dir']) / Path(file_name))
+        if file_name == 'thumbnail.jpg':
+            local_file_path = "/home/pinode3/gakaku/thumnail.jpg"
+        else:
+            # (もしサムネイル以外も保存する場合)
+            local_file_path = str(Path(self.config['camera']['image_dir']) / Path(file_name))
+
         
         # ★ フォルダが存在しない場合に作成する
         os.makedirs(os.path.dirname(local_file_path), exist_ok=True)

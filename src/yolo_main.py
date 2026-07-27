@@ -4,6 +4,7 @@ from mortor_test import mortor
 import time
 from pathlib import Path
 from send import Notifier
+import os
 import sys # exit()のために必要
 
 class YOLO_main():
@@ -15,12 +16,59 @@ class YOLO_main():
         self.new_bbox = [0, 0, 0, 0] # 目標位置（画面中央）用
         self.bbox = [0, 0, 0, 0]     # 検出されたバウンディングボックス用
         self.notifier = Notifier()
+
+        try:
+            from usb import USB
+        except ImportError:
+            print("エラー: 'usb.py' が見つかりません。")
+            print("このスクリプトと同じディレクトリに配置してください。")
+            sys.exit(1)
         
-        self.Move = mortor()
-        self.Move.change_mode(servo_id = 1, mode = 0)
-        self.Move.enable_torque(servo_id = 1)
-        self.Move.change_mode(servo_id = 2, mode = 0)
-        self.Move.enable_torque(servo_id = 2)
+        motor_ports = {
+            "image1": "/dev/ttyUSB_2",
+            "image2": "/dev/ttyUSB_1",
+            "image3": "/dev/ttyUSB_4",
+            "image4": "/dev/ttyUSB_3"
+        }
+
+        self.camera_setup = {}
+
+        # 1. 接続されている全USBデバイスの情報を取得
+        try:
+            devices = USB().get()
+            # 2. typeが 'mortor driver' と判定されたポート名（name）だけのリストを作成
+            valid_motor_names = [name for port, dev_type, name in devices if dev_type == 'mortor driver']
+        except Exception as e:
+            print(f"警告: USB情報の取得に失敗しました: {e}")
+            valid_motor_names = []
+
+        for cam_id, port_path in motor_ports.items():
+            # 3. ポートが物理的に存在し、かつ「モータドライバ」リストに含まれているかチェック
+            if os.path.exists(port_path) and (port_path in valid_motor_names):
+                try:
+                    driver = mortor(port_name=port_path)
+                    
+                    # トルクON設定
+                    driver.change_mode(servo_id=1, mode=0)
+                    driver.enable_torque(servo_id=1)
+                    driver.change_mode(servo_id=2, mode=0)
+                    driver.enable_torque(servo_id=2)
+
+                    self.camera_setup[cam_id] = {"driver": driver, "tilt": 1, "pan": 2}
+                    print(f"[{cam_id}] モータドライバ接続成功: {port_path}")
+                    
+                except Exception as e:
+                    print(f"[{cam_id}] ドライバ初期化エラー: {e}")
+                    self.camera_setup[cam_id] = {"driver": None, "tilt": 1, "pan": 2}
+                    
+            else:
+                # 誤認または未接続の場合のスキップ処理
+                if not os.path.exists(port_path):
+                    print(f"[{cam_id}] ポート未接続 ({port_path})")
+                else:
+                    print(f"[{cam_id}] 誤認を防止: {port_path} はモータドライバではありません")
+                
+                self.camera_setup[cam_id] = {"driver": None, "tilt": 1, "pan": 2}
 
     def yolo(self, image_path):
         """YOLOで物体検出を行うメソッド"""
@@ -30,10 +78,8 @@ class YOLO_main():
             return None
 
         # 推論実行 (リスト形式で結果が返る)
-        results = self.detect.predict(self.image, conf=0.8, save=True, exist_ok=True,imgsz = 640)
+        results = self.detect.predict(self.image, conf=0.8, save=True, exist_ok=True, imgsz=640)
         
-        # --- 【修正】検出結果の確認ロジック ---
-        # 1枚の画像だけ処理しているので results[0] を見る
         result = results[0]
         boxes = result.boxes
 
@@ -44,7 +90,7 @@ class YOLO_main():
 
         # 最も信頼度の高い1つ目のボックスを取得
         box = boxes[0]
-        print(f"信頼度(Conf): {box.conf.item():.4f}") # item()で数値として取り出す
+        print(f"信頼度(Conf): {box.conf.item():.4f}") 
 
         # 座標取得 [x1, y1, x2, y2]
         xyxy = box.xyxy[0].tolist()
@@ -68,7 +114,6 @@ class YOLO_main():
 
     def write_bbox(self, image_path):
         """目標となる中央の枠を描画する"""
-        # 画面中央に、検出された物体と同じサイズの枠を計算（目標位置）
         self.new_bbox[0] = (self.image_width - self.width) / 2
         self.new_bbox[2] = (self.image_width + self.width) / 2
         self.new_bbox[1] = (self.image_height - self.height) / 2
@@ -83,31 +128,31 @@ class YOLO_main():
             (int(self.new_bbox[2]), int(self.new_bbox[3])), 
             color=(255, 255, 0), thickness=5
         )
-        
-        # ファイル保存などをここで行うならコメントアウトを外す
-        # P = Path(image_path)
-        # file_name = P.name
-        # cv2.imwrite(f"output_{file_name}", self.image)
 
-    def move_mortor(self, pan_diff, tilt_diff):
-        """モーターを動かす（仮実装）"""
-        # 変数名の重複を避けるため引数名を変更しました (new_pan -> pan_diff)
+    def move_mortor(self, pan_diff, tilt_diff, camera_id="image2"):
+        # ★ 呼び出されたカメラに応じたドライバとIDを取得
+        setup = self.camera_setup.get(camera_id)
+        if setup is None or setup["driver"] is None:
+            print(f"[{camera_id}] モータ未接続のため動作をスキップします")
+            return
+        driver = setup["driver"]
+        pan_id = setup["pan"]
+        tilt_id = setup["tilt"]
+
+        now_pan = driver.read_servo(servo_id=pan_id)
+        now_tilt = driver.read_servo(servo_id=tilt_id)
         
-        now_pan = self.Move.read_servo(servo_id = 2)
-        now_tilt = self.Move.read_servo(servo_id=1)
         target_pan = now_pan + pan_diff
         target_tilt = now_tilt + tilt_diff
         
-        print(f"Motor Move -> Pan差分: {pan_diff}, Tilt差分: {tilt_diff}")
-        self.Move.move_servo(position = int(target_pan), servo_id = 2)
-        self.Move.move_servo(position = int(target_tilt), servo_id = 1)
-
-    def cal_mortor(self, bbox):
-        """現在位置と目標位置の差分からモーター指令値を計算"""
-        # bboxは [x1, y1, x2, y2]
-        # 比較すべきは「中心座標」どうしか、「左上の座標」どうし
-        # ここでは左上座標 (bbox[0], bbox[1]) と目標 (self.new_bbox[0], [1]) を比較
+        print(f"[{camera_id}] Motor Move -> Pan差分: {pan_diff}, Tilt差分: {tilt_diff}")
         
+        # ★ 取り出した専用のドライバを経由してモータを動かす
+        driver.move_servo(position=int(target_pan), servo_id=pan_id)
+        driver.move_servo(position=int(target_tilt), servo_id=tilt_id)
+
+    def cal_mortor(self, bbox, camera_id="image2"):
+        """現在位置と目標位置の差分からモーター指令値を計算"""
         pan_flag, tilt_flag = 0, 0
         row_pan = bbox[0] - self.new_bbox[0]
         row_tilt = bbox[1] - self.new_bbox[1]
@@ -126,10 +171,11 @@ class YOLO_main():
             tilt_flag = 1
             
         if pan_flag == 1 and tilt_flag == 1:
-            print("画角調整完了 (Center Aligned)")
+            print(f"[{camera_id}] 画角調整完了 (Center Aligned)")
             return True
         else:
-            self.move_mortor(pan_diff, tilt_diff)
+            # ★ 計算した差分とcamera_idを渡す
+            self.move_mortor(pan_diff, tilt_diff, camera_id)
             return False
 
     def is_initial_bbox_acceptable(self, bbox_coords: tuple, growth_factor: float = 2) -> bool:
@@ -148,8 +194,10 @@ class YOLO_main():
         print(f"判定: 幅率={width_ratio:.2f}, 高さ率={height_ratio:.2f} (許容ライン: {max_linear_ratio:.2f})")
         return is_width_acceptable and is_height_acceptable
         
-    def start(self, image_path):
+    def start(self, image_path, camera_id="image2"):
+        """監視スクリプトから呼び出されるエントリーポイント"""
         start_time = time.time()
+        print(f"--- [{camera_id}] の処理を開始 ---")
         
         # 1. 画像サイズの取得
         self.get_image_size_cv2(image_path)
@@ -160,7 +208,8 @@ class YOLO_main():
         # 検出されなかった場合 (None) は処理を中断
         if bbox is None:
             print("処理を終了します。")
-            self.notifier.se:nd_teams("画角が外れています！！")
+            # ★ 【修正】 se:nd_teams というタイポを send_teams に修正
+            #self.notifier.send_teams(f"[{camera_id}] 画角が外れています！！")
             return
 
         # 3. 距離（大きさ）の判定
@@ -168,19 +217,20 @@ class YOLO_main():
             print("距離OK!!")
         else:
             print("距離を離してください (Too Close)")
-            self.notifier.send_teams("【警告】カメラの距離が近いです")
+            #self.notifier.send_teams(f"【警告】[{camera_id}] カメラの距離が近いです")
 
         # 4. 描画とモーター計算
         self.write_bbox(image_path)
-        # self.cal_mortor(bbox) # モーターが有効ならコメントアウトを外す
+        
+        # ★ camera_id を cal_mortor に引き継ぐ
+        self.cal_mortor(bbox, camera_id) 
 
         end_time = time.time()
-        print("画角調整終了")
+        print(f"[{camera_id}] 画角調整終了")
         print(f'Total time: {end_time - start_time:.4f} sec')
 
 # --- 実行ブロック ---
 if __name__ == "__main__":
     yolo_app = YOLO_main()
-    # Windowsパスのエスケープ問題を避けるため、r"..." を使うか / を使う
-    # テスト画像のパスを指定してください
-    yolo_app.start("melon_picture.png")
+    # 単体テスト用
+    yolo_app.start("/home/pinode3/data/image/image3/00_03_RGB_20260601-1813.jpg", camera_id="image3")
