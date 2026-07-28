@@ -232,5 +232,5 @@ class YOLO_main():
 # --- 実行ブロック ---
 if __name__ == "__main__":
     yolo_app = YOLO_main()
-    # 単体テスト用
+    # 単体テスト用（デフォルトでは image2 として処理される）
     yolo_app.start("/home/pinode3/data/image/image3/00_03_RGB_20260601-1813.jpg", camera_id="image3")
