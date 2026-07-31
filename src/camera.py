@@ -40,18 +40,22 @@ class Camera:
             
             # --- 元々の save_images の処理 (日付入りファイル名) ---
             devices = USB().get()
-            success_flag = False
+            saved_paths = []
             for port, type, name in devices:
                 if type == 'SPRESENSE':
-                    file_name = "image{:1}/{}_{:02}_HDR_{}.jpg".format(port, self.config['device_id'], port, dt.datetime.now().strftime('%Y%m%d-%H%M'))
-                    if SPRESENSE(name).save(file_name):
-                        success_flag = True
+                    file_name = "image{:1}/{}_{}_{}_{}_HDR{}.jpg".format(port, self.config['device_id'], self.config['aws_iot']['field_id'], self.config['aws_iot']['project_id'], datetime.now().strftime('%Y%m%d-%H%M'), port)
+                    success = SPRESENSE(name).save(file_name)
+                    if success:
+                        full_path = str(Path(self.config['camera']['image_dir']) / Path(file_name))
+                        saved_paths.append(full_path)
                 elif type == 'USB Camera':
-                    file_name = "image{:1}/{}_{:02}_RGB_{}.jpg".format(port, self.config['device_id'], port, dt.datetime.now().strftime('%Y%m%d-%H%M'))
-                    if UsbCamera(name).save(file_name):
-                        success_flag = True
+                    file_name = "image{:1}/{}_{}_{}_{}_HDR{}.jpg".format(port, self.config['device_id'], self.config['aws_iot']['field_id'], self.config['aws_iot']['project_id'], datetime.now().strftime('%Y%m%d-%H%M'), port)
+                    success = UsbCamera(name).save(file_name)
+                    if success:
+                        full_path = str(Path(self.config['camera']['image_dir']) / Path(file_name))
+                        saved_paths.append(full_path)
             
-            return success_flag
+            return saved_paths
 
         except Exception as e:
             print(f"save_images 中にエラーが発生しました: {e}")
