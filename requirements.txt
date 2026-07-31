@@ -14,3 +14,5 @@ torch==2.9.0
 torchvision==0.24
 ultralytics==8.3.222
 boto3==1.42.93
+awscrt  
+awsiotsdk

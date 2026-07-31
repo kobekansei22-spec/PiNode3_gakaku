@@ -43,13 +43,13 @@ class Camera:
             saved_paths = []
             for port, type, name in devices:
                 if type == 'SPRESENSE':
-                    file_name = "image{:1}/{}_{}_{}_{}_HDR{}.jpg".format(port, self.config['device_id'], self.config['aws_iot']['field_id'], self.config['aws_iot']['project_id'], datetime.now().strftime('%Y%m%d-%H%M'), port)
+                    file_name = "image{:1}/{}_{}_{}_{}_HDR{}.jpg".format(port, self.config['device_id'], self.config['aws_iot']['field_id'], self.config['aws_iot']['project_id'], dt.datetime.now().strftime('%Y%m%d-%H%M'), port)
                     success = SPRESENSE(name).save(file_name)
                     if success:
                         full_path = str(Path(self.config['camera']['image_dir']) / Path(file_name))
                         saved_paths.append(full_path)
                 elif type == 'USB Camera':
-                    file_name = "image{:1}/{}_{}_{}_{}_HDR{}.jpg".format(port, self.config['device_id'], self.config['aws_iot']['field_id'], self.config['aws_iot']['project_id'], datetime.now().strftime('%Y%m%d-%H%M'), port)
+                    file_name = "image{:1}/{}_{}_{}_{}_HDR{}.jpg".format(port, self.config['device_id'], self.config['aws_iot']['field_id'], self.config['aws_iot']['project_id'], dt.datetime.now().strftime('%Y%m%d-%H%M'), port)
                     success = UsbCamera(name).save(file_name)
                     if success:
                         full_path = str(Path(self.config['camera']['image_dir']) / Path(file_name))
