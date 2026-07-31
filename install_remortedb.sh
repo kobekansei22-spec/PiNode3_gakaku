@@ -1,13 +1,12 @@
 #!/bin/bash
-
 ### Pythonライブラリのインストール
 sudo apt update
 sudo apt install -y python3-opencv
+sudo apt install -y swig liblgpio-dev build-essential
 echo "=== pythonライブラリのインストール ==="
 python -m venv venv
 source venv/bin/activate
 pip install -r "requirements.txt"
-
 echo === USB判別ドライバのインストール ===
 model=$(grep -m1 -o -w 'Raspberry Pi [0-9]* Model [ABCD]\|Raspberry Pi 3 Model B Plus' /proc/cpuinfo)
 echo install $model USB driver
@@ -22,12 +21,6 @@ else
 	exit 1
 fi
 
-# リモートInfluxDBの認証トークンの設定
-TOKEN_FILE="src/token.txt"
-echo "InfluxDBのトークンを入力してください。"
-read -p "Token=" token
-echo "$token" > "$TOKEN_FILE"
-
 ### rsyncによるデータのアップロード
 echo === ssh公開鍵の登録 ===
 ssh-keygen -t rsa -b 2048 -N "" -f ~/.ssh/pinode_key -q
@@ -40,7 +33,6 @@ ip_hyphen=$(hostname -I | awk '{gsub(/\./, "-");print $1}')
 cat << EOF > "/home/pinode3/upload_files.sh"
 #!/bin/bash
 rsync -az -e "ssh -i /home/pinode3/.ssh/pinode_key" --rsync-path="mkdir -p /home/$NAME/$ip_hyphen/data && rsync" /home/pinode3/data/ $NAME@$HOST:/home/$NAME/$ip_hyphen/data/
-
 EOF
 chmod +x "/home/pinode3/upload_files.sh"
 
@@ -59,9 +51,7 @@ cp config.json /home/pinode3/
 echo === コンフィグ設定 ===
 DEV_ID=$(echo "$ip_hyphen" | cut -d'-' -f3-)
 echo DEVICE_ID = "$DEV_ID"
-echo HOST      = "$HOST"
 sed -i "2s/00/$DEV_ID/" /home/pinode3/config.json
-sed -i "4s/localhost/$HOST/" /home/pinode3/config.json
 
 ### サービスファイルの登録
 echo === サービスファイルの登録 ===
@@ -70,5 +60,3 @@ sudo systemctl enable data_collector.timer
 sudo systemctl start data_collector.timer
 sudo systemctl enable daily_rsync.timer
 sudo systemctl start daily_rsync.timer
-sudo systemctl enable noon_monitor.timer
-sudo systemctl start noon_monitor.timer

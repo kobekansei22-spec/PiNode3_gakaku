@@ -1,13 +1,23 @@
 {
-    "device_id" : "00",
+    "device_id" : "PiNode39",
     "influxdb"  : {
-        "host"          : "localhost",
+        "host"          : "192.168.200.51",
         "port"          : 8086,
         "username"      : "pinode",
         "password"      : "pinode-pass",
         "organization"  : "pinode",
         "bucket"        : "pinode"
     },
+    "aws_iot": {
+        "endpoint": "AAAAAAAAAAAAAAAAAAAAA",
+        "credentials_endpoint": "c20m7081gguphf.credentials.iot.ap-northeast-1.amazonaws.com",
+        "cert_dir": "/etc/iot",
+        "field_id": "daiwa-field-04",
+        "project_id": "daiwa",
+        "device_type": "PiNode",
+        "wilt_device_id": "PiNodeW"
+    },
+ 
     "sensor"    : {
         "previous_data_path"    : "/home/pinode3/data/previous_sensor_data.json",
         "csv_dir"       : "/home/pinode3/data/sensor/",
@@ -72,5 +82,11 @@
     "max_retry_count" : {
         "usb_camera"     : 3,
         "SPRESENSE"      : 3
+    },
+    "s3": {
+
+        "bucket_name": "AAAAAAAA"
+
     }
+ 
 }
