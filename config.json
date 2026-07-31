@@ -1,5 +1,5 @@
 {
-    "device_id" : "PiNode39",
+    "device_id" : "00",
     "influxdb"  : {
         "host"          : "192.168.200.51",
         "port"          : 8086,
@@ -10,7 +10,7 @@
     },
     "aws_iot": {
         "endpoint": "AAAAAAAAAAAAAAAAAAAAA",
-        "credentials_endpoint": "c20m7081gguphf.credentials.iot.ap-northeast-1.amazonaws.com",
+        "credentials_endpoint": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         "cert_dir": "/etc/iot",
         "field_id": "daiwa-field-04",
         "project_id": "daiwa",
